@@ -33,7 +33,7 @@ Each `Instance`:
 |---|---|---|
 | `.Name` | `string` | Instance name. |
 | `.Project` | `string` | Incus project. |
-| `.Location` | `string` | Cluster member the instance runs on; empty off a cluster. |
+| `.Location` | `string` | Cluster member the instance runs on; `none` on a standalone server. |
 | `.Label` | `string` | Value of `user.label.<label>`. |
 | `.Labels` | `map[string]string` | Keys below the label with the prefix cut: `user.label.prom.port` is `.Labels.port`. |
 | `.Config` | `map[string]string` | Full expanded configuration, without `volatile.*` keys. |
