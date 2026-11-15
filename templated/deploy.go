@@ -99,6 +99,11 @@ func deploy(ctx context.Context, logger *slog.Logger, conn *iclient.Connection, 
 		retry.DelayType(retry.BackOffDelay),
 		retry.LastErrorOnly(true),
 		retry.OnRetry(func(n uint, err error) {
+			// A canceled deployment is not retried; the attempt only failed because of it.
+			if ctx.Err() != nil {
+				return
+			}
+
 			logger.Warn("retrying deployment", "attempt", n+1, "target", target.String(), "err", err)
 		}),
 	).Do(func() error {

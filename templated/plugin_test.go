@@ -1,12 +1,14 @@
 package templated
 
 import (
+	"bytes"
 	"context"
 	"io"
 	"log/slog"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -499,4 +501,57 @@ func TestPluginReconcileCancelsPreviousDeployment(t *testing.T) {
 	newCancel, ok := p.deploy.cancels[targetKey]
 	require.True(t, ok)
 	require.NotNil(t, newCancel)
+}
+
+func TestPluginSupersededDeploymentIsNotAnError(t *testing.T) {
+	origExec := execCommand
+	defer func() { execCommand = origExec }()
+
+	var calls atomic.Int32
+
+	// The first deployment's format hangs until it is canceled; later ones succeed at once.
+	execCommand = func(ctx context.Context, _ string, _ ...string) *exec.Cmd {
+		if calls.Add(1) == 1 {
+			return exec.CommandContext(ctx, "sleep", "10")
+		}
+
+		return exec.CommandContext(ctx, "sh", "-c", "exit 0")
+	}
+
+	targetPath := filepath.Join(t.TempDir(), "Caddyfile")
+
+	var logs bytes.Buffer
+
+	logger := slog.New(slog.NewTextHandler(&logs, &slog.HandlerOptions{Level: slog.LevelDebug}))
+
+	p := New(logger, Config{
+		Targets: []Target{
+			{Label: "edge", Path: targetPath, Text: listTmpl, Format: []string{"fmt"}},
+		},
+	})
+
+	now := time.Now()
+	ctx := context.Background()
+
+	setDomain := func(domain string) {
+		inst := iutil.NewInstance(true, "", map[string]string{"user.label.edge": domain}, nil, nil, nil)
+		p.instances["default/app"] = iutil.NewEvent(now, "instance-updated", "default", "app", "").WithInstance(inst, true)
+	}
+
+	setDomain("v1.example.com")
+	p.reconcile(ctx)
+	require.Eventually(t, func() bool { return calls.Load() == 1 }, 2*time.Second, 10*time.Millisecond, "first format is running")
+
+	setDomain("v2.example.com")
+	p.reconcile(ctx)
+
+	p.Wait()
+
+	data, err := os.ReadFile(targetPath)
+	require.NoError(t, err)
+	require.Contains(t, string(data), "v2.example.com")
+
+	require.Contains(t, logs.String(), "Deployment superseded")
+	require.NotContains(t, logs.String(), "level=ERROR")
+	require.NotContains(t, logs.String(), "level=WARN")
 }

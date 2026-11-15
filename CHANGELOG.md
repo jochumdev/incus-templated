@@ -62,3 +62,5 @@ variable and default path changed; there is no compatibility layer.
 - A target instance that starts while its file is being written is reloaded,
   instead of serving the previous file until the next change, e.g. Caddy
   missing routes after the first `up`. (by @tallica)
+- A deployment replaced by a newer change, or stopped by shutdown, is logged at
+  debug as superseded instead of as an error with a retry warning. (by @tallica)

@@ -106,6 +106,13 @@ func reconcileDeployments(
 			}
 
 			if err != nil {
+				// Canceled by a newer reconcile, which deploys its own content, or by shutdown; neither is a failure.
+				if deployCtx.Err() != nil {
+					logger.Debug("Deployment superseded", "target", target.String(), "err", err)
+
+					return
+				}
+
 				logger.Error("deploying", "target", target.String(), "err", err)
 
 				return

@@ -25,6 +25,11 @@ func deployOS(ctx context.Context, logger *slog.Logger, target Target, content [
 		retry.DelayType(retry.BackOffDelay),
 		retry.LastErrorOnly(true),
 		retry.OnRetry(func(n uint, err error) {
+			// A canceled deployment is not retried; the attempt only failed because of it.
+			if ctx.Err() != nil {
+				return
+			}
+
 			logger.Warn("retrying deployment", "attempt", n+1, "target", target.String(), "err", err)
 		}),
 	).Do(func() error {
