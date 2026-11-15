@@ -63,7 +63,7 @@ Besides the Go built-ins (`index`, `printf`, `len`, `range`, ...):
 
 ### Prometheus `file_sd`
 
-Prometheus watches the file itself, so the target needs no commands:
+Prometheus watches the file itself, so the target needs no commands. [Examples](/examples/prometheus) has the complete stack, with Prometheus reading the file from its own volume:
 
 ```bash
 incus-templated run --templates-dir /etc/incus-templated/templates \

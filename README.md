@@ -197,6 +197,7 @@ Full documentation is available at [caddy.incus-compose.org](https://caddy.incus
 - **[Architecture & Security](https://caddy.incus-compose.org/architecture)** - Process isolation, volume resolution, and concurrency model
 - **[Caddy Labels & Routing](https://caddy.incus-compose.org/labels)** - Complete label specification and load balancing
 - **[Templates](https://caddy.incus-compose.org/templates)** - Template data, funcs, Prometheus and cluster examples, and the Caddy preset
+- **[Examples](https://caddy.incus-compose.org/examples)** - Complete stacks for the Caddy preset and Prometheus `file_sd`
 - **[Configuration Reference](https://caddy.incus-compose.org/configuration)** - Targets, presets, the YAML config file, canonical `INCUS_TEMPLATED_*` environment variables, and HTTP endpoints
 - **[Deployment & Operations](https://caddy.incus-compose.org/deployment)** - Production compose stacks, reboot survival, and troubleshooting
 
