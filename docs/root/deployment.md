@@ -97,7 +97,7 @@ If Caddy is temporarily stopped (e.g. during maintenance or image upgrades):
 1. `incus-templated` detects the container is stopped.
 2. It resolves the storage volume mounted at `/config` and writes the updated `Caddyfile` directly to the volume via SFTP.
 3. Because Caddy is not running, in-container validation and reload are skipped.
-4. When Caddy starts up, it reads the updated configuration from the storage volume on its first boot cycle.
+4. When Caddy starts up, it reads the updated configuration from the storage volume on its first boot cycle. If it started while the file was being written, `incus-templated` reloads it, so it does not keep serving the previous file.
 
 ---
 

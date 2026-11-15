@@ -60,7 +60,7 @@ Because Caddy holds no Incus credentials and its Admin API is bound strictly to 
 
 ## Storage Volume Resolution & Direct SFTP Deployer
 
-Caddy persists its configuration in an Incus custom storage volume (e.g. `incus-templated` mounted to `/config`).
+A target instance keeps its file in an Incus custom storage volume, e.g. Caddy's `caddy-config` volume mounted at `/config`. The diagram follows the Caddy preset; any target with its own commands goes through the same steps.
 
 Rather than requiring `incus-templated` to mount the storage volume locally on the host or in its own container, `incus-templated` communicates entirely through the Incus API:
 
@@ -104,16 +104,16 @@ sequenceDiagram
 1. **Volume Resolution (`resolveVolume`)**:
    `deploy()` inspects the instance's expanded devices to locate a disk device whose mount path matches the parent directory of the target `path` (default `/config` with the Caddy preset). It extracts the `pool` and volume `source` name.
 2. **Cold Staging (Reboot & Crash Survival)**:
-   If Caddy is stopped, `incus-templated` still updates the Caddyfile on the storage volume. When Caddy starts up or reboots, it reads the updated configuration immediately.
+   If the instance is stopped, `incus-templated` still updates the file on the storage volume. When the instance starts up or reboots, it reads the updated file immediately. If the instance started while the file was being written, its `reload` runs, since the service may have read the previous file.
 3. **Atomic Swapping**:
-   `incus-templated` never writes directly over the active `Caddyfile`. It writes to `<path>.tmp` and only renames via `sftp.PosixRename` after the target's `format` and `validate` commands succeed in-container.
+   `incus-templated` never writes directly over the live file. It writes to `<path>.tmp` and only renames via `sftp.PosixRename` after the target's `format` and `validate` commands succeed in-container.
 4. **Validation Isolation**:
    If an invalid route or template syntax error occurs, rendering or a check command fails. The active file remains completely untouched.
 
 ### Local Deployment (`--target <label>,path=<path>`)
 
-When `incus-templated` runs alongside Caddy on the same host, container, or VM:
-- **Filesystem Staging**: Writes directly to `.<base>.tmp` in the target directory and atomically swaps via `os.Rename`.
+When `incus-templated` runs on the same host, container, or VM as the service reading the file:
+- **Filesystem Staging**: Writes `<path>.tmp` in the target directory and atomically swaps it in via `os.Rename`. The live file keeps its mode, and a new one is `0644`.
 - **Local Commands**: Runs the target's `format`, `validate` and `reload` on the local machine. A failed reload is retried; the file is already in place for the next start.
 - **Unified Event Pipeline**: Reconciles alongside instance targets within the exact same single-goroutine loop.
 
@@ -145,7 +145,7 @@ flowchart LR
 
 - **No Mutexes**: `Plugin` contains zero mutexes (`sync.Mutex` or `sync.RWMutex`) and zero atomic flags.
 - **Sequential Event Processing**: Events delivered by `Handle()` are placed into a buffered inbox channel (`p.inbox`) and forwarded along the `ievent` chain immediately.
-- **Ordered Reconciles**: `processEvent()` and `reconcile()` execute exclusively on the `Run()` goroutine. Race conditions between concurrent state updates and Caddy reloads are impossible by design.
+- **Ordered Reconciles**: `processEvent()` and `reconcile()` execute exclusively on the `Run()` goroutine. Race conditions between concurrent state updates and reloads are impossible by design.
 - **Graceful Drain**: When the chain receives a shutdown command (`iutil.CommandDrain`), `p.Run` drains remaining events in `p.inbox` via `drainInbox()`, forwards the drain command to `p.commandOut`, and exits cleanly.
 
 ---
@@ -155,8 +155,8 @@ flowchart LR
 `incus-templated` coordinates with the `ievent` enricher to avoid flapping routes during startup or daemon reconnection:
 
 - **Cold State (`iutil.ChainCold`)**:
-  When the process starts, the enricher performs an initial fleet sweep of all monitored projects. During this sweep, instance events are recorded into `p.instances`, but **all Caddy deployments are gated and paused**.
+  When the process starts, the enricher performs an initial fleet sweep of all monitored projects. During this sweep, instance events are recorded into `p.instances`, but **all deployments are gated and paused**.
 - **Warm State (`iutil.ChainWarm`)**:
-  Once the sweep finishes, the enricher emits `ActionSweepEnd`. `incus-templated` transitions to `ChainWarm` and performs a single initial `reconcile()` deploying the complete routing table.
+  Once the sweep finishes, the enricher emits `ActionSweepEnd`. `incus-templated` transitions to `ChainWarm` and performs a single initial `reconcile()` deploying every target.
 - **Disconnection Handling**:
-  If the Incus event stream disconnects, the state drops to `ChainCold`. Caddy retains its last known good configuration on the storage volume while `incus-templated` reconnects and re-synchronizes the fleet.
+  If the Incus event stream disconnects, the state drops to `ChainCold`. Every target keeps its last good file while `incus-templated` reconnects and re-synchronizes the fleet.

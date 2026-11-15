@@ -67,7 +67,7 @@ A target is one rendered file. It names:
 4. Atomically rename `<path>.tmp` over `<path>`.
 5. Run `reload`.
 
-Commands are argv, not shell: no shell is needed in the target instance. Two placeholders are substituted in every argument: `{staging}` (the `.tmp` file) and `{path}` (the live file). Instance targets run them through `incus exec` inside that instance, local targets run them on the host. When the target instance is stopped, the file is still swapped in and the commands are skipped, so it boots with the new file.
+Commands are argv, not shell: no shell is needed in the target instance. Two placeholders are substituted in every argument: `{staging}` (the `.tmp` file) and `{path}` (the live file). Instance targets run them through `incus exec` inside that instance, local targets run them on the host. When the target instance is stopped, the file is still swapped in and the commands are skipped, so it boots with the new file. If it started while the file was written, `reload` runs anyway, since the service may have read the previous file.
 
 A failed step is retried with backoff, up to 10 attempts.
 

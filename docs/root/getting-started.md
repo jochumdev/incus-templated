@@ -156,7 +156,8 @@ If you run Caddy directly on the host OS or inside a VM alongside `incus-templat
 # Listen to Incus and update local Caddyfile directly
 incus-templated run \
   --target edge,preset=caddy,path=/etc/caddy/Caddyfile \
-  --remote default
+  --remote default \
+  --use-remote
 ```
 
 `incus-templated` validates the syntax and reloads the local Caddy daemon directly on the host filesystem.
@@ -168,3 +169,4 @@ incus-templated run \
 - Explore label options in [Caddy Labels & Routing](/labels).
 - Render anything else, or customize reverse proxy blocks, in [Templates](/templates).
 - Review all configuration options in [Configuration Reference](/configuration).
+- See complete stacks, including Prometheus `file_sd`, in [Examples](/examples).
