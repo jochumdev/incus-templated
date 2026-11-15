@@ -39,6 +39,19 @@ func TestParseTargets(t *testing.T) {
 			}},
 		},
 		{
+			name: "no-<step> turns the step off",
+			in:   "edge,preset=caddy,path=/etc/caddy/Caddyfile,no-format,no-validate,no-reload",
+			want: []Target{{
+				Label:    "edge",
+				Preset:   "caddy",
+				Path:     "/etc/caddy/Caddyfile",
+				Format:   []string{},
+				Validate: []string{},
+				Reload:   []string{},
+				Flags:    map[string]string{},
+			}},
+		},
+		{
 			name: "duplicate flag: last wins",
 			in:   "edge,instance=first,instance=second,project=p",
 			want: []Target{{Label: "edge", Instance: "second", Project: "p", Flags: map[string]string{}}},

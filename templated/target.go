@@ -67,11 +67,11 @@ func ParseTargets(s string) ([]Target, error) {
 			case "template":
 				t.Template = v
 			case "format":
-				t.Format = strings.Fields(v)
+				t.Format = command(v)
 			case "validate":
-				t.Validate = strings.Fields(v)
+				t.Validate = command(v)
 			case "reload":
-				t.Reload = strings.Fields(v)
+				t.Reload = command(v)
 			default:
 				t.Flags[k] = v
 			}
@@ -81,4 +81,13 @@ func ParseTargets(s string) ([]Target, error) {
 	}
 
 	return targets, nil
+}
+
+// command splits a step's flag value; "false" is how ParseEntries spells no-<step>, and the empty list turns the step off.
+func command(v string) []string {
+	if v == "false" {
+		return []string{}
+	}
+
+	return strings.Fields(v)
 }
