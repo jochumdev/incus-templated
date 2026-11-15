@@ -115,6 +115,11 @@ services:
       - data:/data
     command: |
       sh -c 'if [ ! -f /config/Caddyfile ]; then echo -e "{\n\tadmin localhost:2019\n}\n:80 {\n\trespond \"Caddy initializing...\" 503\n}\n" > /config/Caddyfile; fi; exec caddy run --config /config/Caddyfile --adapter caddyfile'
+    healthcheck:
+      # 127.0.0.1, not localhost: Caddy's admin listens on IPv4 and localhost may resolve to ::1.
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:2019/config/"]
+      interval: 5s
+      retries: 12
 
   incus-templated:
     image: ghcr.io/jochumdev/incus-templated/incus-templated:1.0.0-beta.2
