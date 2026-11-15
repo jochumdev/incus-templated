@@ -166,6 +166,11 @@ targets:
 	require.NoError(t, os.WriteFile(file, nil, 0o600))
 	_, err = cfg.validate()
 	require.NoError(t, err, "an empty file adds nothing to the flag targets")
+
+	require.NoError(t, os.WriteFile(file, []byte("templates_dir: .\ntargets:\n  - label: prom\n    path: /x\n    template: file_sd.json.tmpl\n"), 0o600))
+	args, err = cfg.validate()
+	require.NoError(t, err, "a relative templates_dir resolves against the config file")
+	require.Equal(t, dir, args.TemplatesDir)
 }
 
 func TestConfigEndpoint(t *testing.T) {

@@ -133,6 +133,10 @@ func (c *config) validate() (*mainActionArgs, error) {
 
 		if templatesDir == "" {
 			templatesDir = file.TemplatesDir
+			// Relative to the file, not the cwd: a service manager starts us from /.
+			if templatesDir != "" && !filepath.IsAbs(templatesDir) {
+				templatesDir = filepath.Join(filepath.Dir(c.ConfigFile), templatesDir)
+			}
 		}
 
 		targets = append(targets, file.Targets...)
