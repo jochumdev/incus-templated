@@ -58,6 +58,7 @@ func TestPluginWants(t *testing.T) {
 
 	require.Contains(t, actions, "instance-shutdown")
 	require.Contains(t, actions, "instance-restarted")
+	require.Contains(t, actions, "instance-migrated")
 }
 
 func TestPluginProcessEvent(t *testing.T) {

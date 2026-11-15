@@ -77,6 +77,7 @@ func (p *Plugin) Wants() []iutil.Want {
 		"instance-deleted",
 		"instance-updated",
 		"instance-renamed",
+		"instance-migrated",
 	}
 
 	wants := make([]iutil.Want, 0, len(actions)+1)
