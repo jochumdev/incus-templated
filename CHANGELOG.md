@@ -56,3 +56,9 @@ variable and default path changed; there is no compatibility layer.
   (by @tallica)
 - A live migration to another cluster member re-renders the targets the
   instance feeds. (by @tallica)
+
+### Fixed
+
+- A target instance that starts while its file is being written is reloaded,
+  instead of serving the previous file until the next change, e.g. Caddy
+  missing routes after the first `up`. (by @tallica)

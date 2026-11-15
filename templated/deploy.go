@@ -189,9 +189,18 @@ func deploy(ctx context.Context, logger *slog.Logger, conn *iclient.Connection, 
 		}
 
 		if !running {
-			logger.Info("Deployed for next boot (instance not running)", "target", target.String())
+			// The instance can start while the file is written, its service reading the old one; only
+			// a reload then picks up the new file, and the recorded hash stops a later deploy doing it.
+			now, _, err := conn.GetInstance(ctx, target.Project, target.Instance, nil)
+			if err != nil {
+				return fmt.Errorf("getting instance %s:%s: %w", target.Project, target.Instance, err)
+			}
 
-			return nil
+			if now.StatusCode != incusapi.Running && now.Status != "Running" {
+				logger.Info("Deployed for next boot (instance not running)", "target", target.String())
+
+				return nil
+			}
 		}
 
 		if len(target.Reload) > 0 {
