@@ -158,6 +158,14 @@ targets:
 	cfg.ConfigFile = file
 	_, err = cfg.validate()
 	require.ErrorContains(t, err, "parsing --config")
+
+	require.NoError(t, os.WriteFile(file, []byte("targets:\n  - label: prom\n    path: /x\n    job: incus\n"), 0o600))
+	_, err = cfg.validate()
+	require.ErrorContains(t, err, "field job not found")
+
+	require.NoError(t, os.WriteFile(file, nil, 0o600))
+	_, err = cfg.validate()
+	require.NoError(t, err, "an empty file adds nothing to the flag targets")
 }
 
 func TestConfigEndpoint(t *testing.T) {

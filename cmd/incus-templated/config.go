@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"time"
@@ -120,8 +122,12 @@ func (c *config) validate() (*mainActionArgs, error) {
 
 		var file configFile
 
-		err = yaml.Unmarshal(b, &file)
-		if err != nil {
+		// Unknown keys are errors: a CLI-style flag such as job: belongs under flags:, and a typo would otherwise vanish.
+		dec := yaml.NewDecoder(bytes.NewReader(b))
+		dec.KnownFields(true)
+
+		err = dec.Decode(&file)
+		if err != nil && !errors.Is(err, io.EOF) {
 			return nil, fmt.Errorf("parsing --config %s: %w", c.ConfigFile, err)
 		}
 
