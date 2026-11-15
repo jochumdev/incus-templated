@@ -41,8 +41,15 @@ INCUS_REMOTE=my-remote just test-e2e ./cmd/incus-templated -run TestE2E
 
 `TestE2ECaddyReverseProxy` covers the Caddy preset end to end: two
 load-balanced upstreams, scaling down and up, and a Caddy restart reading the
-file back from its volume. It also runs a second target on the same label with
-no commands, writing JSON to the host.
+file back from its volume. It also covers:
+
+- two more targets on the same label with no commands, one writing JSON to the
+  host and one into `sink`'s root filesystem, checked as `0644`;
+- a vhost that `caddy validate` rejects: the file is staged as
+  `Caddyfile.tmp`, the live file stays untouched, and traffic keeps flowing;
+- a stopped Caddy: the change lands on its volume, read back with
+  `incus storage volume file pull`, and Caddy boots with it, checked against
+  its live config through the admin API.
 
 A test that needs an instance to stay up gives it `oci.entrypoint: sh`; it needs
 no `sleep`, and the test does not wait for one.

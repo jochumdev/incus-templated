@@ -85,12 +85,21 @@ func TestE2ECaddyReverseProxy(t *testing.T) {
 	configCtx, configCancel := context.WithCancel(ctx)
 	defer configCancel()
 
+	// A per-vhost template caddy validate rejects, for the validation failure below.
+	templatesDir := t.TempDir()
+	err = os.WriteFile(filepath.Join(templatesDir, "bad.caddyfile"), []byte("{{ .Domain }} {\n\tnot_a_directive\n}\n"), 0o600)
+	require.NoError(t, err)
+
 	cfg := newConfig()
-	// A second target on the same label with no commands: what a Prometheus file_sd consumer needs.
+	cfg.TemplatesDir = templatesDir
+	namesTmpl := `[{{ range $i, $inst := .Instances }}{{ if $i }},{{ end }}{{ json $inst.Name }}{{ end }}]`
+	// Two more targets on the same label with no commands, what a Prometheus file_sd consumer needs: one on the
+	// host, one in sink's root filesystem, which is written through the instance's SFTP rather than a volume's.
 	sdPath := filepath.Join(t.TempDir(), "sd", "targets.json")
 	cfg.Targets = []templated.Target{
 		{Label: "edge", Preset: "caddy", Project: project, Instance: "caddy"},
-		{Label: "edge", Path: sdPath, Text: `[{{ range $i, $inst := .Instances }}{{ if $i }},{{ end }}{{ json $inst.Name }}{{ end }}]`},
+		{Label: "edge", Path: sdPath, Text: namesTmpl},
+		{Label: "edge", Project: project, Instance: "sink", Path: "/etc/targets.json", Text: namesTmpl},
 	}
 	cfg.Projects = []string{project}
 	cfg.Remote = incusRemote()
@@ -135,6 +144,17 @@ func TestE2ECaddyReverseProxy(t *testing.T) {
 
 		return readErr == nil && string(sd) == `["api1","api2"]`
 	}, 15*time.Second, time.Second, "targets.json was not rendered")
+
+	t.Log("verifying the rootfs target landed in sink, readable by other users")
+	require.Eventually(t, func() bool {
+		sd, readErr := runCompose(ctx, t, project, fixture, "exec", "-T", "sink", "cat", "/etc/targets.json")
+
+		return readErr == nil && strings.TrimSpace(sd) == `["api1","api2"]`
+	}, 15*time.Second, time.Second, "sink:/etc/targets.json was not rendered")
+
+	mode, err := runCompose(ctx, t, project, fixture, "exec", "-T", "sink", "stat", "-c", "%a", "/etc/targets.json")
+	require.NoError(t, err, "stat failed: %s", mode)
+	require.Equal(t, "644", strings.TrimSpace(mode))
 
 	// 2. Verify HTTP reverse proxying works and reaches a busybox API server.
 	t.Log("verifying HTTP reverse proxying through Caddy")
@@ -209,4 +229,62 @@ func TestE2ECaddyReverseProxy(t *testing.T) {
 
 		return body == "api1-ok" || body == "api2-ok"
 	}, 15*time.Second, time.Second, "traffic failed after Caddy container restart")
+
+	incus := func(args ...string) (string, error) {
+		cmd := exec.CommandContext(ctx, "incus", append(args, "--project", project)...)
+		out, err := cmd.CombinedOutput()
+
+		return string(out), err
+	}
+
+	// 6. Validation failure: a vhost caddy validate rejects is staged but never replaces the live file.
+	t.Log("giving api2 a vhost that fails caddy validate")
+	out, err = incus("config", "set", incusRemote()+":api2", "user.label.edge=http://bad.example.test,upstream=8080,template=bad.caddyfile")
+	require.NoError(t, err, "setting api2's label failed: %s", out)
+
+	require.Eventually(t, func() bool {
+		staged, readErr := runCompose(ctx, t, project, fixture, "exec", "-T", "caddy", "cat", "/config/Caddyfile.tmp")
+
+		return readErr == nil && strings.Contains(staged, "bad.example.test")
+	}, 30*time.Second, time.Second, "the rejected Caddyfile was never staged")
+
+	caddyfile, err := runCompose(ctx, t, project, fixture, "exec", "-T", "caddy", "cat", "/config/Caddyfile")
+	require.NoError(t, err, "reading Caddyfile failed: %s", caddyfile)
+	require.NotContains(t, caddyfile, "bad.example.test", "a Caddyfile that failed validation replaced the live one")
+	require.Equal(t, 2, strings.Count(caddyfile, ":8080"))
+
+	resp, err := runCompose(ctx, t, project, fixture, "exec", "-T", "caddy",
+		"wget", "-q", "-O", "-", "--header", "Host: api.example.test", "http://127.0.0.1:80/")
+	require.NoError(t, err, "traffic failed while the bad vhost was pending: %s", resp)
+
+	out, err = incus("config", "set", incusRemote()+":api2", "user.label.edge=http://api.example.test,upstream=8080")
+	require.NoError(t, err, "restoring api2's label failed: %s", out)
+
+	// 7. Stopped target: the file is still written to Caddy's volume, and Caddy boots with it.
+	t.Log("stopping Caddy, then api1, to test deploying to a stopped instance")
+	out, err = runCompose(ctx, t, project, fixture, "stop", "caddy")
+	require.NoError(t, err, "stopping caddy failed: %s", out)
+
+	out, err = runCompose(ctx, t, project, fixture, "stop", "api1")
+	require.NoError(t, err, "stopping api1 failed: %s", out)
+
+	pool, err := incus("config", "device", "get", incusRemote()+":caddy", "vol-caddy-config", "pool")
+	require.NoError(t, err, "reading the volume's pool failed: %s", pool)
+
+	require.Eventually(t, func() bool {
+		onVolume, readErr := incus("storage", "volume", "file", "pull", incusRemote()+":"+strings.TrimSpace(pool), "vol-caddy-config/Caddyfile", "-")
+
+		return readErr == nil && strings.Contains(onVolume, "api.example.test") && strings.Count(onVolume, ":8080") == 1
+	}, 45*time.Second, 2*time.Second, "the Caddyfile on the stopped instance's volume was not updated")
+
+	out, err = runCompose(ctx, t, project, fixture, "start", "caddy")
+	require.NoError(t, err, "starting caddy failed: %s", out)
+
+	// The live config, not a response: a stale config with api1 still in it would answer from api2 as well.
+	require.Eventually(t, func() bool {
+		routes, readErr := runCompose(ctx, t, project, fixture, "exec", "-T", "caddy",
+			"wget", "-q", "-O", "-", "http://127.0.0.1:2019/config/apps/http/servers/srv0/routes")
+
+		return readErr == nil && strings.Count(routes, `"dial"`) == 1
+	}, 30*time.Second, time.Second, "Caddy did not boot with the file written while it was stopped")
 }

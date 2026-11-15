@@ -31,6 +31,14 @@ services:
     labels:
       edge: "http://api.example.test,upstream=8080"
 
+  # A target whose path is in the root filesystem, not on a volume.
+  sink:
+    image: docker.io/library/busybox:glibc
+    container_name: sink
+    restart: unless-stopped
+    command: >
+      sh -c "exec httpd -f -p 8080 -h /tmp"
+
 volumes:
   caddy-config:
   caddy-data:
