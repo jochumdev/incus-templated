@@ -84,6 +84,8 @@ func TestConfigValidateRejects(t *testing.T) {
 		{"os preset without path", templated.Target{Label: "a", Preset: "caddy"}, "missing path"},
 		{"no template", templated.Target{Label: "a", Path: "/x"}, "missing template or preset"},
 		{"template file missing", templated.Target{Label: "a", Path: "/x", Template: "/nonexistent.tmpl"}, "reading template"},
+		{"template syntax error", templated.Target{Label: "a", Path: "/x", Text: "{{ range .Instances }"}, "parsing template"},
+		{"template unknown func", templated.Target{Label: "a", Path: "/x", Text: "{{ vhostz . }}"}, "parsing template"},
 	}
 
 	for _, tc := range tests {

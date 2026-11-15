@@ -139,6 +139,9 @@ func (c *config) validate() (*mainActionArgs, error) {
 
 	written := map[string]string{}
 
+	// Parsing only needs the func names; the logger is used when a func runs, which validation never does.
+	funcs := caddy.Funcs(nil, templatesDir)
+
 	for i := range targets {
 		t := &targets[i]
 
@@ -190,25 +193,28 @@ func (c *config) validate() (*mainActionArgs, error) {
 
 		written[t.Key()] = t.String()
 
-		if t.Text != "" {
-			continue
+		if t.Text == "" {
+			if t.Template == "" {
+				return nil, fmt.Errorf("invalid target %q: missing template or preset", t.String())
+			}
+
+			path := t.Template
+			if !filepath.IsAbs(path) && templatesDir != "" {
+				path = filepath.Join(templatesDir, path)
+			}
+
+			b, err := os.ReadFile(path)
+			if err != nil {
+				return nil, fmt.Errorf("invalid target %q: reading template: %w", t.String(), err)
+			}
+
+			t.Text = string(b)
 		}
 
-		if t.Template == "" {
-			return nil, fmt.Errorf("invalid target %q: missing template or preset", t.String())
-		}
-
-		path := t.Template
-		if !filepath.IsAbs(path) && templatesDir != "" {
-			path = filepath.Join(templatesDir, path)
-		}
-
-		b, err := os.ReadFile(path)
+		_, err := templated.Parse(*t, funcs)
 		if err != nil {
-			return nil, fmt.Errorf("invalid target %q: reading template: %w", t.String(), err)
+			return nil, fmt.Errorf("invalid target %q: %w", t.String(), err)
 		}
-
-		t.Text = string(b)
 	}
 
 	return &mainActionArgs{

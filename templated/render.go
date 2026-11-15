@@ -23,12 +23,22 @@ func funcs() template.FuncMap {
 	}
 }
 
-// render executes the target's template with data, extra funcs taking precedence over the generic ones.
-func render(t Target, data Data, extra template.FuncMap) ([]byte, error) {
+// Parse parses the target's template text, extra funcs taking precedence over the generic ones.
+func Parse(t Target, extra template.FuncMap) (*template.Template, error) {
 	// A label or flag an instance does not carry renders empty; the default prints "<no value>" into the file.
 	tmpl, err := template.New(t.Template).Option("missingkey=zero").Funcs(funcs()).Funcs(extra).Parse(t.Text)
 	if err != nil {
 		return nil, fmt.Errorf("parsing template %q: %w", t.Template, err)
+	}
+
+	return tmpl, nil
+}
+
+// render executes the target's template with data.
+func render(t Target, data Data, extra template.FuncMap) ([]byte, error) {
+	tmpl, err := Parse(t, extra)
+	if err != nil {
+		return nil, err
 	}
 
 	var buf bytes.Buffer
