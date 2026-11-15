@@ -42,7 +42,7 @@ Follow the [Go proverbs](https://go-proverbs.github.io/).
 ## Architecture and design rules
 
 Its core design principles are documented in
-[docs/root/developer/index.md](docs/root/developer/index.md).
+[docs/root/architecture.md](docs/root/architecture.md).
 
 Read the documentation in your own checkout, not the published site: `docs/` is
 part of the repository, and a feature branch may carry a version of it that the site does
