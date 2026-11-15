@@ -175,7 +175,7 @@ incus-templated run \
 When running directly on a machine where the `incus` CLI is configured (`~/.config/incus/config.yml`):
 ```bash
 incus-templated run \
-  --remote ict-daily-dev01-main \
+  --remote my-remote \
   --use-remote \
   --target edge,preset=caddy,instance=caddy,project=default
 ```
