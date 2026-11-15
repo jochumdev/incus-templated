@@ -102,7 +102,7 @@ incus-templated run --templates-dir /etc/incus-templated/templates \
 INCUS_TEMPLATED_TARGETS="public,preset=caddy,instance=caddy-prod,project=default internal,preset=caddy,instance=caddy-dev,project=infra" incus-templated run
 ```
 
-Values containing spaces or commas are quoted: `reload='caddy reload --config {path}'`.
+Values containing spaces or commas are quoted: `reload='caddy reload --config {path}'`. A command given by flag is split on whitespace, so its arguments cannot contain spaces or quotes of their own; use the list form in a [config file](#config-file) for `sh -c '...'` or paths with spaces. `no-format`, `no-validate` and `no-reload` turn a preset's step off.
 
 ### Config file
 

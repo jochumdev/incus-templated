@@ -169,7 +169,7 @@ incus-compose exec caddy caddy fmt /config/Caddyfile
 
 - **`opening SFTP session for volume ... not found`**:
   Verify that Caddy's `/config` directory is backed by a named storage volume in `compose.yaml`.
-- **`executing caddy reload: connection refused`**:
-  Verify that Caddy's global block includes `{ admin localhost:2019 }`. If `admin off` was specified, Caddy cannot process reload signals over its internal Admin API.
+- **`["caddy" "reload" ...] failed` with `connection refused` in its output**:
+  Caddy's admin API is not reachable. Verify that Caddy is running and that its global block includes `{ admin localhost:2019 }`; with `admin off`, Caddy cannot be reloaded. The file is already in place, but the deploy counts as failed: it is retried with backoff, and every later event tries again until a reload succeeds. For a host target whose service may be down, use a reload that tolerates it, such as `reload: [systemctl, try-reload-or-restart, caddy]`, or `no-reload`.
 - **`readiness 503 Service Unavailable`**:
   Indicates the chain is still performing the initial fleet sweep or is disconnected from the Incus API. Check network connectivity to Incus.
