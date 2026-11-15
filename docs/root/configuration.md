@@ -106,7 +106,7 @@ Values containing spaces or commas are quoted: `reload='caddy reload --config {p
 
 ### Config file
 
-Long commands read better in YAML. `--config` takes a file with `templates_dir` and a `targets` list using the same fields; commands are lists. Targets from the file are added before those from `--target`.
+Long commands read better in YAML. `--config` takes a file with `templates_dir` and a `targets` list using the same fields; commands are lists, and extra template values go under `flags:`. Unknown keys are rejected. A relative `templates_dir` is resolved against the directory of the config file. Targets from the file are added before those from `--target`.
 
 ```yaml
 templates_dir: /etc/incus-templated/templates
@@ -130,7 +130,7 @@ targets:
     reload: [systemctl, reload, haproxy]
 ```
 
-Every target is checked at startup: a label is required, `instance` needs `project`, a path is required, no two targets may write the same file, and the template file must exist. A bad target stops `incus-templated` before it connects.
+Every target is checked at startup: a label is required, `instance` needs `project`, a path is required, no two targets may write the same file, and the template file must exist and parse. A bad target stops `incus-templated` before it connects.
 
 ---
 
