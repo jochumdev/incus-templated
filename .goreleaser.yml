@@ -54,12 +54,13 @@ dockers_v2:
     build_args:
       VERSION: "{{ .Version }}"
     images:
-      - "ghcr.io/jochumdev/incus-templated/incus-templated"
+      # The repository owner, so a fork publishes under its own account; ghcr needs it lowercase.
+      - '{{ printf "ghcr.io/%s/incus-templated/incus-templated" (tolower (envOrDefault "GITHUB_REPOSITORY_OWNER" "jochumdev")) }}'
     tags:
       - "{{ .Version }}"
       - "latest"
     annotations:
-      "org.opencontainers.image.description": "incus-templated - Dynamic Caddy configuration from Incus events"
+      "org.opencontainers.image.description": "incus-templated - Render config files from Incus instance labels"
       "org.opencontainers.image.created": "{{.Date}}"
       "org.opencontainers.image.name": "{{.ProjectName}}"
       "org.opencontainers.image.revision": "{{.FullCommit}}"
