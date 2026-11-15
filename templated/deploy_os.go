@@ -35,11 +35,26 @@ func deployOS(ctx context.Context, logger *slog.Logger, target Target, content [
 			return fmt.Errorf("creating directory %s: %w", dir, err)
 		}
 
+		// The file is read by another service (Caddy, Prometheus, ...) that may run as its own user,
+		// so keep the mode an operator set on the live file and default to world-readable.
+		mode := os.FileMode(0o644)
+
+		fi, err := os.Stat(target.Path)
+		if err == nil {
+			mode = fi.Mode().Perm()
+		}
+
 		staging := filepath.Join(dir, filepath.Base(target.Path)+".tmp")
 
-		err = os.WriteFile(staging, content, 0o600)
+		err = os.WriteFile(staging, content, mode)
 		if err != nil {
 			return fmt.Errorf("writing staging file %s: %w", staging, err)
+		}
+
+		// WriteFile leaves the mode of a staging file left over from an earlier attempt untouched.
+		err = os.Chmod(staging, mode)
+		if err != nil {
+			return fmt.Errorf("setting mode on staging file %s: %w", staging, err)
 		}
 
 		run := func(argv []string) error {

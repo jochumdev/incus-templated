@@ -44,6 +44,33 @@ func TestDeployOSWithoutCommands(t *testing.T) {
 	require.Equal(t, "[]", string(data))
 }
 
+func TestDeployOSFileMode(t *testing.T) {
+	dir := t.TempDir()
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	target := Target{Label: "prom", Path: filepath.Join(dir, "targets.json")}
+
+	err := deployOS(context.Background(), logger, target, []byte("[]"))
+	require.NoError(t, err)
+
+	fi, err := os.Stat(target.Path)
+	require.NoError(t, err)
+	require.Equal(t, os.FileMode(0o644), fi.Mode().Perm())
+
+	err = os.Chmod(target.Path, 0o640)
+	require.NoError(t, err)
+
+	// A stale staging file from an earlier attempt must not carry its own mode over.
+	err = os.WriteFile(target.Path+".tmp", nil, 0o600)
+	require.NoError(t, err)
+
+	err = deployOS(context.Background(), logger, target, []byte("[{}]"))
+	require.NoError(t, err)
+
+	fi, err = os.Stat(target.Path)
+	require.NoError(t, err)
+	require.Equal(t, os.FileMode(0o640), fi.Mode().Perm())
+}
+
 func TestDeployOSExpandsPlaceholders(t *testing.T) {
 	targetPath := filepath.Join(t.TempDir(), "Caddyfile")
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
