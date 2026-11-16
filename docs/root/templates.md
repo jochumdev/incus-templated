@@ -43,7 +43,7 @@ Each `Instance`:
 
 A label change, an address change, or a move to another cluster member re-renders the target.
 
-A label or flag an instance or target does not carry renders as an empty string, so `{{ .Labels.port }}` on an instance without `port` gives nothing rather than `<no value>`. Test for it with `{{ if .Labels.port }}`.
+A label or flag an instance or target does not carry renders as an empty string, so `{{ .Labels.port }}` on an instance without `port` gives nothing rather than `<no value>`. Test for it with `{{ if .Labels.port }}`. Where an empty value would still pass the target's checks but be wrong, wrap it in `required` to fail the render instead: the live file is left as it is and the error is logged.
 
 ## Template Funcs
 
@@ -54,6 +54,7 @@ Besides the Go built-ins (`index`, `printf`, `len`, `range`, ...):
 | `json <value>` | JSON-encode a value: `{{ json .Name }}` gives `"web-1"`. |
 | `join <list> <sep>` | `strings.Join`. |
 | `split <string> <sep>` | `strings.Split`. |
+| `required <msg> <value>` | `<value>`, or fail the render with `<msg>` when it is empty. |
 | `vhosts .` | Caddy: group the instances into site blocks (see [Caddy Preset](#caddy-preset)). |
 | `vhost <v>` | Caddy: render one site block. |
 
@@ -103,7 +104,7 @@ When instances sit on a per-member NAT bridge and are reached through a proxy de
 ```text
 {{- range .Instances }}
 {{ .Labels.domain }} {
-	reverse_proxy {{ index $.Flags (printf "member.%s" .Location) }}:{{ .Labels.upstream }}
+	reverse_proxy {{ required (printf "no member.%s flag" .Location) (index $.Flags (printf "member.%s" .Location)) }}:{{ .Labels.upstream }}
 }
 {{- end }}
 ```
@@ -111,6 +112,8 @@ When instances sit on a per-member NAT bridge and are reached through a proxy de
 ```bash
 --target edge,path=/etc/caddy/Caddyfile,template=members.caddyfile,format='caddy fmt --overwrite {staging}',reload='caddy reload --config {path}',member.node1=10.0.0.11,member.node2=10.0.0.12
 ```
+
+Without `required`, an instance on a member with no flag would render `reverse_proxy :8122`, which `caddy validate` accepts and Caddy proxies to localhost.
 
 ---
 

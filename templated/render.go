@@ -3,6 +3,7 @@ package templated
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"text/template"
@@ -20,6 +21,14 @@ func funcs() template.FuncMap {
 		},
 		"join":  strings.Join,
 		"split": strings.Split,
+		// A missing key renders empty, which a consumer may accept as a valid but wrong value (an upstream of ":8122").
+		"required": func(msg string, v string) (string, error) {
+			if v == "" {
+				return "", errors.New(msg)
+			}
+
+			return v, nil
+		},
 	}
 }
 

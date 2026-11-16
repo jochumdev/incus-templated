@@ -88,3 +88,21 @@ func TestRenderMissingKeyIsEmpty(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "[][]", string(out), "a missing key must not leak <no value> into the file")
 }
+
+func TestRenderRequired(t *testing.T) {
+	d := Data{
+		Flags:     map[string]string{"member.node1": "10.0.0.11"},
+		Instances: []Instance{{Location: "node1"}},
+	}
+
+	text := `{{ range .Instances }}{{ required (printf "no member.%s flag" .Location) (index $.Flags (printf "member.%s" .Location)) }}{{ end }}`
+
+	out, err := render(Target{Text: text}, d, nil)
+	require.NoError(t, err)
+	require.Equal(t, "10.0.0.11", string(out))
+
+	d.Instances[0].Location = "node3"
+
+	_, err = render(Target{Text: text}, d, nil)
+	require.ErrorContains(t, err, "no member.node3 flag")
+}
