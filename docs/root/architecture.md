@@ -38,7 +38,7 @@ flowchart TD
     IncusDaemon["Incus Daemon API<br/>(HTTPS / Unix Socket)"]
 
     CC -->|"1. Subscribes to events<br/>2. Discovers instances"| IncusDaemon
-    CC -->|"3. SFTP directly to storage volume"| StorageVolume[("Incus Storage Volume<br/>(incus-templated)")]
+    CC -->|"3. SFTP directly to storage volume"| StorageVolume[("Incus Storage Volume<br/>(config)")]
     CC -->|"4. Exec 'caddy fmt' & 'caddy reload'"| Caddy
 
     StorageVolume -.->|mounted at /config| Caddy

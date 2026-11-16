@@ -77,7 +77,7 @@ services:
     environment:
       INCUS_TEMPLATED_INCUS: "${INCUS_TEMPLATED_INCUS:-https://10.0.1.1:8443}"
       INCUS_TEMPLATED_DATA_DIR: /var/lib/incus-templated
-      INCUS_TEMPLATED_TARGETS: "edge,preset=caddy,instance=caddy,project=default"
+      INCUS_TEMPLATED_TARGETS: "edge,preset=caddy,instance=caddy-1,project=default"
       INCUS_TEMPLATED_HTTP_ADDRESS: ":9153"
       INCUS_TEMPLATED_LOG: "INFO"
     secrets:
@@ -105,7 +105,7 @@ On first start:
 
 1. `incus-templated` reads the secret token from `/run/secrets/token`.
 2. It generates a client TLS certificate and enrolls it with the Incus API.
-3. The enrolled certificate is persisted in the `config-data` volume at `/var/lib/incus-templated/client.crt` and `client.key`. Future restarts reuse the certificate without requiring a token.
+3. The enrolled certificate is persisted in the `incus-templated` volume at `/var/lib/incus-templated/client.crt` and `client.key`. Future restarts reuse the certificate without requiring a token.
 
 ---
 
@@ -128,7 +128,7 @@ Deploy the service:
 incus-compose up -d api
 ```
 
-`incus-templated` immediately catches the `instance-started` event, resolves the instance's bridge IP address, writes the updated configuration directly to the `incus-templated` storage volume, validates syntax inside Caddy, and executes a reload.
+`incus-templated` immediately catches the `instance-started` event, resolves the instance's bridge IP address, writes the updated configuration directly to Caddy's `config` storage volume, validates syntax inside Caddy, and executes a reload.
 
 Verify that Caddy routes traffic to the new service:
 

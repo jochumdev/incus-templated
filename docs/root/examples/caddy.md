@@ -18,7 +18,7 @@ Caddy instance, incus-templated, and an application whose label becomes a site
 block. A target needs nothing beyond the label, the instance and its project:
 
 ```bash
---target edge,preset=caddy,instance=caddy,project=default
+--target edge,preset=caddy,instance=caddy-1,project=default
 ```
 
 - [Caddy Labels & Routing](/labels) - the label syntax, load balancing,

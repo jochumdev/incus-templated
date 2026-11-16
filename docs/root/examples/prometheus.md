@@ -26,10 +26,10 @@ reload command.
 
 ```text
 .
-├── compose.yaml
-├── config.yaml
-└── templates/
-    └── file_sd.json.tmpl
+|-- compose.yaml
+|-- config.yaml
+`-- templates/
+    `-- file_sd.json.tmpl
 ```
 
 ## `compose.yaml`
