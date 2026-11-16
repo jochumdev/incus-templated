@@ -1,0 +1,62 @@
+package templated
+
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"strings"
+	"text/template"
+)
+
+// Funcs are the generic template funcs, available in every target template and in Caddy per-vhost templates.
+func Funcs() template.FuncMap {
+	return template.FuncMap{
+		"json": func(v any) (string, error) {
+			b, err := json.Marshal(v)
+			if err != nil {
+				return "", err
+			}
+
+			return string(b), nil
+		},
+		"join":  strings.Join,
+		"split": strings.Split,
+		// A missing key renders empty, which a consumer may accept as a valid but wrong value (an upstream of ":8122").
+		"required": func(msg string, v string) (string, error) {
+			if v == "" {
+				return "", errors.New(msg)
+			}
+
+			return v, nil
+		},
+	}
+}
+
+// Parse parses the target's template text, extra funcs taking precedence over the generic ones.
+func Parse(t Target, extra template.FuncMap) (*template.Template, error) {
+	// A label or flag an instance does not carry renders empty; the default prints "<no value>" into the file.
+	tmpl, err := template.New(t.Template).Option("missingkey=zero").Funcs(Funcs()).Funcs(extra).Parse(t.Text)
+	if err != nil {
+		return nil, fmt.Errorf("parsing template %q: %w", t.Template, err)
+	}
+
+	return tmpl, nil
+}
+
+// render executes the target's template with data.
+func render(t Target, data Data, extra template.FuncMap) ([]byte, error) {
+	tmpl, err := Parse(t, extra)
+	if err != nil {
+		return nil, err
+	}
+
+	var buf bytes.Buffer
+
+	err = tmpl.Execute(&buf, data)
+	if err != nil {
+		return nil, fmt.Errorf("rendering template %q: %w", t.Template, err)
+	}
+
+	return buf.Bytes(), nil
+}

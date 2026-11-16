@@ -39,8 +39,8 @@ Licensing is in [CONTRIBUTING.md](CONTRIBUTING.md). What is specific to you:
   summarize the whole issue. Keep the conventional
   `<type>(<scope>): <description>` format from CONTRIBUTING.md.
 - Do not use `go vet`, `gci` or any of those diagnostics tools, use `just fix`.
-- You don't need to capture tests on your own use `just test-log` to get the
-  last log.
+- You don't need to capture tests on your own: every `just test*` run writes
+  `work/logs/<date>.json`; read the newest one.
 - We don't use the define and test one line `if` syntax, instead splitting
   definition and testing across two lines:
 
@@ -127,7 +127,7 @@ depends on the CLI framework.
 This project's testing model differs from the org default, so the org testing
 rules do not apply here. Follow this repo's own rules in
 [CONTRIBUTING.md](CONTRIBUTING.md) and
-[docs/root/architecture/testing.md](docs/root/architecture/testing.md).
+[docs/root/developer/testing.md](docs/root/developer/testing.md).
 
 ## Working in this repo
 

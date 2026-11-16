@@ -1,26 +1,26 @@
 ---
-description: Dynamic Caddy reverse proxy configuration driven by Incus instance events via ievent.
+description: Render any config file from Incus instance labels and deploy it on every change - Caddy, Prometheus file_sd and more.
 editor: markdown
 published: true
 tags: []
-title: Incus Caddy Config
+title: incus-templated
 leafwiki_id: frWCDE_vR
-leafwiki_title: Incus Caddy Config
+leafwiki_title: incus-templated
 leafwiki_created_at: "2026-09-15T22:05:21Z"
 leafwiki_updated_at: "2026-09-15T22:23:42.502291694Z"
 leafwiki_creator_id: system
 leafwiki_last_author_id: zyZjvP_vg
 ---
-# Incus Caddy Config
+# incus-templated
 
-Dynamic, zero-touch reverse proxy configuration for [Caddy](https://caddyserver.com/) on [Incus](https://linuxcontainers.org/incus/), driven by instance lifecycle events.
+Config files that follow your [Incus](https://linuxcontainers.org/incus/) instances: a Go template per target, re-rendered and deployed on every instance lifecycle event.
 
-`caddy-config` watches your Incus fleet via the `ievent` stream, renders Caddyfiles from instance labels in real time, validates them in-container, and deploys them directly into persistent storage volumes via Incus SFTP.
+`incus-templated` watches your Incus fleet via the `ievent` stream, renders any Go template from instance labels in real time, checks the result with your own format and validate commands, and deploys it directly into persistent storage volumes via Incus SFTP or onto the local filesystem. The built-in Caddy preset does this for Caddyfiles, as shown below; [Prometheus `file_sd`](/examples/prometheus) needs only a template, and [Templates](/templates) covers anything else.
 
 ```mermaid
 flowchart TD
     Incus["Incus API (Events & Control)"] -->|instance events| Chain["ievent Chain<br/>(source &rarr; debounce &rarr; enricher)"]
-    Chain --> Plugin["caddy-config Plugin"]
+    Chain --> Plugin["incus-templated Plugin"]
 
     subgraph Storage["Incus Storage Pool"]
         Vol[("custom/caddy-config volume<br/>mounted at /config")]
@@ -30,15 +30,15 @@ flowchart TD
         CaddyProc["caddy:2.11.4-alpine<br/>(admin localhost:2019)"]
     end
 
-    Plugin -->|"1. SFTP write (.Caddyfile.tmp)"| Vol
+    Plugin -->|"1. SFTP write (Caddyfile.tmp)"| Vol
     Plugin -->|"2. Incus exec ('caddy fmt')"| CaddyProc
-    Plugin -->|"3. SFTP atomic rename (.Caddyfile.tmp &rarr; Caddyfile)"| Vol
+    Plugin -->|"3. SFTP atomic rename (Caddyfile.tmp &rarr; Caddyfile)"| Vol
     Plugin -->|"4. Incus exec ('caddy reload')"| CaddyProc
 ```
 
 ## Quick Example
 
-Define Caddy and your backend application in `compose.yaml`:
+With the Caddy preset, define Caddy and your backend application in `compose.yaml`:
 
 ```yaml
 services:
@@ -63,7 +63,7 @@ volumes:
   data:
 ```
 
-When `caddy-config` runs with `--caddy-instance edge,instance=caddy,project=default`, it automatically discovers `api`, resolves its Incus bridge IPv4 address, and renders the reverse proxy block into Caddy:
+When `incus-templated` runs with `--target edge,preset=caddy,instance=caddy,project=default`, it automatically discovers `api`, resolves its Incus bridge IPv4 address, and renders the reverse proxy block into Caddy:
 
 ```caddyfile
 {
@@ -82,11 +82,11 @@ When you scale, stop, start, or rename instances, Caddy reloads within milliseco
 ## Key Highlights
 
 - **Zero Admin Port Exposure**: Caddy's Admin API is bound strictly to `localhost:2019` inside the container. No admin port is mapped to the host or public network.
-- **Direct Storage Volume SFTP**: Configurations are written directly to the underlying Incus storage volume (`conn.GetStoragePoolVolumeFileSFTP`). If Caddy reboots or starts cold, it immediately boots with the current configuration.
-- **Safe Atomic Swaps**: Renders in-memory, writes to `/.Caddyfile.tmp`, verifies and formats syntax with `caddy fmt --overwrite` inside the container, and atomically swaps via `sftp.PosixRename`. Broken configurations are rejected before touching the active site.
+- **Direct Storage Volume SFTP**: Files are written directly to the underlying Incus storage volume (`conn.GetStoragePoolVolumeFileSFTP`). If the consuming instance reboots or starts cold, it immediately boots with the current file.
+- **Safe Atomic Swaps**: Renders in memory, writes a staging file, runs your optional format and validate commands inside the instance (`caddy fmt` and `caddy validate` for the preset), and atomically swaps it in via `sftp.PosixRename`. A file that fails validation never replaces the live one.
 - **Single Goroutine Concurrency**: State reconciliation is strictly confined to a single goroutine (Rule A4). No mutexes, lock contention, or race hazards.
 - **Warm Gating**: Changes are suppressed while the event chain is cold (`ChainCold`). Deployments only run once the fleet sweep completes (`ChainWarm`), eliminating route churn on startup.
-- **Flexible Custom Templating**: Full support for custom site blocks via inline Go templates or external template directories (`--templates-dir`).
+- **Any Template**: Each target renders its own Go template with the labelled instances' names, labels, addresses, cluster member and devices; the Caddy preset adds per-vhost templates on top.
 
 ---
 
@@ -94,7 +94,8 @@ When you scale, stop, start, or rename instances, Caddy reloads within milliseco
 
 - [Getting Started](/getting-started) - Prerequisites, installation, and first deployment
 - [Architecture & Security](/architecture) - Process isolation, volume resolution, and concurrency model
-- [Instance Labels & Routing](/labels) - Label specification, network resolution, and load balancing
-- [Custom Vhost Templates](/templates) - Advanced site blocks, template variables, and examples
-- [Configuration Reference](/configuration) - CLI flags, environment variables, and HTTP endpoints
+- [Configuration Reference](/configuration) - Targets, presets, the config file, CLI flags, environment variables, and HTTP endpoints
+- [Caddy Labels & Routing](/labels) - The Caddy preset's labels, network resolution, and load balancing
+- [Templates](/templates) - Template data and funcs, the Caddy preset, and per-vhost templates
+- [Examples](/examples) - Complete stacks for Caddy and Prometheus
 - [Deployment & Operations](/deployment) - Production compose stacks, reboot survival, and troubleshooting
