@@ -1,6 +1,8 @@
 package templated
 
 import (
+	"slices"
+	"strconv"
 	"strings"
 	"unicode"
 )
@@ -184,7 +186,9 @@ func splitPartsQuoteAware(token string) []string {
 }
 
 // ParseEntries parses whitespace- or comma-separated entries with optional comma-separated flags.
-func ParseEntries(raw string) []Entry {
+// A part naming one of bareFlags, or it with a no- prefix, sets that flag to true or false; any other
+// bare part is a new entry's value.
+func ParseEntries(raw string, bareFlags ...string) []Entry {
 	var entries []Entry
 	tokens := splitTokensQuoteAware(raw)
 
@@ -207,11 +211,9 @@ func ParseEntries(raw string) []Entry {
 			}
 
 			lower := strings.ToLower(part)
-			if lower == "uri" {
-				currentFlags["uri"] = "true"
-				currentParts = append(currentParts, part)
-			} else if lower == "no-uri" {
-				currentFlags["uri"] = "false"
+			bare, negated := strings.CutPrefix(lower, "no-")
+			if slices.Contains(bareFlags, bare) {
+				currentFlags[bare] = strconv.FormatBool(!negated)
 				currentParts = append(currentParts, part)
 			} else if strings.HasPrefix(lower, "no-") && len(lower) > 3 && (currentValue != "" || len(currentFlags) > 0) {
 				key := strings.TrimPrefix(lower, "no-")

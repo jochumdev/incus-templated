@@ -8,7 +8,7 @@ import (
 
 func TestParseEntries(t *testing.T) {
 	// Flags and key-value options.
-	entries := ParseEntries("example.com,flag1=val1,no-uri api.example.com,flag2=val2,uri")
+	entries := ParseEntries("example.com,flag1=val1,no-uri api.example.com,flag2=val2,uri", "uri")
 	require.Len(t, entries, 2)
 
 	require.Equal(t, "example.com", entries[0].Value)
@@ -33,19 +33,24 @@ func TestParseEntries(t *testing.T) {
 	require.NotContains(t, entries[0].Flags, "no-cache")
 
 	// Duplicate flags: last input wins.
-	entries = ParseEntries("example.com,k=v1,k=v2,no-uri,uri")
+	entries = ParseEntries("example.com,k=v1,k=v2,no-uri,uri", "uri")
 	require.Len(t, entries, 1)
 	require.Equal(t, "v2", entries[0].Flags["k"])
 	require.Equal(t, "true", entries[0].Flags["uri"])
 	require.NotContains(t, entries[0].Flags, "no-uri")
 
-	entries = ParseEntries("example.com,uri,no-uri")
+	entries = ParseEntries("example.com,uri,no-uri", "uri")
 	require.Len(t, entries, 1)
 	require.Equal(t, "false", entries[0].Flags["uri"])
 
-	entries = ParseEntries("example.com,no-uri,uri=true")
+	entries = ParseEntries("example.com,no-uri,uri=true", "uri")
 	require.Len(t, entries, 1)
 	require.Equal(t, "true", entries[0].Flags["uri"])
+
+	// A bare word the caller did not name as a flag is the next entry's value.
+	entries = ParseEntries("example.com,uri")
+	require.Len(t, entries, 2)
+	require.Equal(t, "uri", entries[1].Value)
 
 	// Quoted values with spaces and commas (single and double quotes).
 	entries = ParseEntries("example.com,resolvers='1.1.1.1 1.0.0.1',header=\"X-Forwarded-For: 1.2.3.4, 5.6.7.8\"")

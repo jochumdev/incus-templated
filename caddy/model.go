@@ -30,7 +30,7 @@ type redirEntry struct {
 
 // parseRedirs parses a whitespace-separated list of redirection domains and flags.
 func parseRedirs(raw string) []redirEntry {
-	entries := templated.ParseEntries(raw)
+	entries := templated.ParseEntries(raw, "uri")
 	redirs := make([]redirEntry, 0, len(entries))
 	for _, e := range entries {
 		tmpl := e.Flags["template"]
@@ -338,7 +338,7 @@ func processStructuredRoute(
 	}
 
 	for _, rawRedir := range redirList {
-		entries := templated.ParseEntries(rawRedir)
+		entries := templated.ParseEntries(rawRedir, "uri")
 		for _, entry := range entries {
 			if entry.Value == "" || slices.Contains(domainFields, entry.Value) {
 				continue
@@ -425,7 +425,7 @@ func extractVhosts(logger *slog.Logger, targetLabel string, instances []template
 		network = strings.TrimSpace(network)
 
 		if domain != "" {
-			entries := templated.ParseEntries(domain)
+			entries := templated.ParseEntries(domain, "uri")
 			for _, de := range entries {
 				netVal, ok := de.Flags["network"]
 				if ok && netVal != "" {
@@ -522,7 +522,7 @@ func extractVhosts(logger *slog.Logger, targetLabel string, instances []template
 		domainIncludeURI := true
 
 		if domain != "" {
-			domainEntries := templated.ParseEntries(domain)
+			domainEntries := templated.ParseEntries(domain, "uri")
 			var domainNames []string
 			for _, de := range domainEntries {
 				if de.Value != "" {
@@ -601,7 +601,7 @@ func extractVhosts(logger *slog.Logger, targetLabel string, instances []template
 
 			if baseTarget != "" {
 				domainFields := strings.Fields(cleanDomain)
-				entries := templated.ParseEntries(redirs)
+				entries := templated.ParseEntries(redirs, "uri")
 
 				for _, entry := range entries {
 					if entry.Value == "" || slices.Contains(domainFields, entry.Value) {
