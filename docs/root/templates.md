@@ -58,6 +58,8 @@ Besides the Go built-ins (`index`, `printf`, `len`, `range`, ...):
 | `vhosts .` | Caddy: group the instances into site blocks (see [Caddy Preset](#caddy-preset)). |
 | `vhost <v>` | Caddy: render one site block. |
 
+Caddy per-vhost templates get `json`, `join`, `split` and `required` too.
+
 ---
 
 ## Examples

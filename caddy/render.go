@@ -94,7 +94,7 @@ func resolveTemplate(v vhost, templatesDir string, defaultTmpl *template.Templat
 				continue
 			}
 
-			tmpl, err := template.New(filepath.Base(path)).Option("missingkey=zero").Parse(string(content))
+			tmpl, err := template.New(filepath.Base(path)).Option("missingkey=zero").Funcs(templated.Funcs()).Parse(string(content))
 			if err != nil {
 				return nil, fmt.Errorf("parsing template file %q: %w", path, err)
 			}
@@ -109,7 +109,7 @@ func resolveTemplate(v vhost, templatesDir string, defaultTmpl *template.Templat
 		return nil, fmt.Errorf("reading template file %q: %w", v.Template, os.ErrNotExist)
 	}
 
-	tmpl, err := template.New("inline_" + v.Domain).Option("missingkey=zero").Parse(v.Template)
+	tmpl, err := template.New("inline_" + v.Domain).Option("missingkey=zero").Funcs(templated.Funcs()).Parse(v.Template)
 	if err != nil {
 		return nil, fmt.Errorf("parsing inline template: %w", err)
 	}

@@ -9,7 +9,8 @@ import (
 	"text/template"
 )
 
-func funcs() template.FuncMap {
+// Funcs are the generic template funcs, available in every target template and in Caddy per-vhost templates.
+func Funcs() template.FuncMap {
 	return template.FuncMap{
 		"json": func(v any) (string, error) {
 			b, err := json.Marshal(v)
@@ -35,7 +36,7 @@ func funcs() template.FuncMap {
 // Parse parses the target's template text, extra funcs taking precedence over the generic ones.
 func Parse(t Target, extra template.FuncMap) (*template.Template, error) {
 	// A label or flag an instance does not carry renders empty; the default prints "<no value>" into the file.
-	tmpl, err := template.New(t.Template).Option("missingkey=zero").Funcs(funcs()).Funcs(extra).Parse(t.Text)
+	tmpl, err := template.New(t.Template).Option("missingkey=zero").Funcs(Funcs()).Funcs(extra).Parse(t.Text)
 	if err != nil {
 		return nil, fmt.Errorf("parsing template %q: %w", t.Template, err)
 	}

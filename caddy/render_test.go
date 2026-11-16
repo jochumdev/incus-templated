@@ -58,6 +58,25 @@ func TestRendererCustomInlineTemplate(t *testing.T) {
 	require.Contains(t, out, "reverse_proxy 10.0.1.10:8080")
 }
 
+func TestRendererVhostGenericFuncs(t *testing.T) {
+	vhosts := []vhost{
+		{
+			Domain:    "multi.example.com",
+			Upstreams: []string{"10.0.1.10:8080", "10.0.1.11:8080"},
+			Template:  `{{ .Domain }} {` + "\n" + `reverse_proxy {{ join .Upstreams " " }}` + "\n" + `}`,
+		},
+	}
+
+	content, err := render(vhosts, "")
+	require.NoError(t, err)
+	require.Contains(t, string(content), "reverse_proxy 10.0.1.10:8080 10.0.1.11:8080")
+
+	vhosts[0].Template = `{{ .Domain }} {` + "\n" + `header_up X-Registry {{ required "no registry flag" .Flags.registry }}` + "\n" + `}`
+
+	_, err = render(vhosts, "")
+	require.ErrorContains(t, err, "no registry flag")
+}
+
 func TestRendererCustomTemplateFile(t *testing.T) {
 	tmpDir := t.TempDir()
 	templateFile := filepath.Join(tmpDir, "static_proxy.tmpl")
