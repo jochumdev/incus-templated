@@ -52,9 +52,9 @@ variable and default path changed; there is no compatibility layer.
   deploy and is retried; it was logged and treated as success. Use
   `reload: [systemctl, try-reload-or-restart, caddy]` or `no-reload` if the
   service may be down. (by @tallica)
-- A locally written file keeps the mode of the file it replaces, and a new
-  file is `0644`; it was always `0600`, which other users could not read.
-  (by @tallica)
+- A written file keeps the mode of the file it replaces, and a new file is
+  `0644`. A local file was always `0600`, which other users could not read;
+  one written into an instance took the staging file's mode. (by @tallica)
 - A live migration to another cluster member re-renders the targets the
   instance feeds. (by @tallica)
 

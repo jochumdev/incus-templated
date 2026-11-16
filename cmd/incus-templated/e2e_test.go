@@ -156,6 +156,10 @@ func TestE2ECaddyReverseProxy(t *testing.T) {
 	require.NoError(t, err, "stat failed: %s", mode)
 	require.Equal(t, "644", strings.TrimSpace(mode))
 
+	// The next re-render, on the scale-down below, must keep a mode an operator set on the live file.
+	out, err = runCompose(ctx, t, project, fixture, "exec", "-T", "sink", "chmod", "600", "/etc/targets.json")
+	require.NoError(t, err, "chmod failed: %s", out)
+
 	// 2. Verify HTTP reverse proxying works and reaches a busybox API server.
 	t.Log("verifying HTTP reverse proxying through Caddy")
 	require.Eventually(t, func() bool {
@@ -197,6 +201,17 @@ func TestE2ECaddyReverseProxy(t *testing.T) {
 
 		return strings.TrimSpace(resp) == "api2-ok"
 	}, 15*time.Second, time.Second, "traffic did not route exclusively to api2")
+
+	t.Log("verifying the re-rendered rootfs target kept its live mode")
+	require.Eventually(t, func() bool {
+		sd, readErr := runCompose(ctx, t, project, fixture, "exec", "-T", "sink", "cat", "/etc/targets.json")
+
+		return readErr == nil && strings.TrimSpace(sd) == `["api2"]`
+	}, 15*time.Second, time.Second, "sink:/etc/targets.json was not re-rendered")
+
+	mode, err = runCompose(ctx, t, project, fixture, "exec", "-T", "sink", "stat", "-c", "%a", "/etc/targets.json")
+	require.NoError(t, err, "stat failed: %s", mode)
+	require.Equal(t, "600", strings.TrimSpace(mode))
 
 	// 4. Scale-up: Restart api1. Caddyfile should restore both upstreams.
 	t.Log("starting api1 to test dynamic scale-up")

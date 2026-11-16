@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -171,6 +172,20 @@ func deploy(ctx context.Context, logger *slog.Logger, conn *iclient.Connection, 
 
 		if closeErr != nil {
 			return fmt.Errorf("closing staging file: %w", closeErr)
+		}
+
+		// As in deployOS: keep the mode an operator set on the live file, default to world-readable, and
+		// do not let a staging file left over from an earlier attempt carry its own mode over.
+		mode := os.FileMode(0o644)
+
+		fi, err := sftpClient.Stat(sftpTargetPath)
+		if err == nil {
+			mode = fi.Mode().Perm()
+		}
+
+		err = sftpClient.Chmod(sftpStagingPath, mode)
+		if err != nil {
+			return fmt.Errorf("setting mode on staging file %s: %w", sftpStagingPath, err)
 		}
 
 		// A stopped instance cannot exec; the file is still swapped in so it boots with it.
