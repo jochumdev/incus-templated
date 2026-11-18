@@ -43,7 +43,7 @@ Each `Instance`:
 
 A label change, an address change, or a move to another cluster member re-renders the target.
 
-A label or flag an instance or target does not carry renders as an empty string, so `{{ .Labels.port }}` on an instance without `port` gives nothing rather than `<no value>`. Test for it with `{{ if .Labels.port }}`. Where an empty value would still pass the target's checks but be wrong, wrap it in `required` to fail the render instead, and the error is logged. When a render fails, each instance is rendered on its own: the ones that fail are left out of the file, and the rest are deployed. When every instance fails, or none does alone, the fault is the target's and the live file is left as it is.
+A label or flag an instance or target does not carry renders as an empty string, so `{{ .Labels.port }}` on an instance without `port` gives nothing rather than `<no value>`. Test for it with `{{ if .Labels.port }}`. Where an empty value would still pass the target's checks but be wrong, wrap it in `required` to fail the render instead, and the error is logged. When a render fails, each instance is rendered on its own: the ones that fail are left out of the file, and the rest are deployed. When every instance fails, or none does alone, the fault is the target's and the live file is left as it is. This blames the right instance only while each instance's part of the output depends on that instance alone: a template reading across `.Instances` (`index .Instances 1`, `len .Instances`, `$.Instances` inside the `range`) can have an instance left out for a fault that is not its own.
 
 ## Template Funcs
 

@@ -63,6 +63,10 @@ func data(target Target, instances []*iutil.Event) Data {
 
 // renderTarget renders d, leaving out the instances that fail to render on their own, so one bad
 // instance does not hold back every other change to the file. It returns how many it left out.
+//
+// Rendering an instance alone stands in for its part of the whole render, which holds only while
+// the template does not read across .Instances. Where it does, the wrong instance can be left out,
+// but the kept ones must still render together, so a broken file is never returned.
 func renderTarget(logger *slog.Logger, target Target, d Data, funcs template.FuncMap) ([]byte, int, error) {
 	content, err := render(target, d, funcs)
 	if err == nil {
