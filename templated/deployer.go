@@ -61,6 +61,48 @@ func data(target Target, instances []*iutil.Event) Data {
 	return out
 }
 
+// renderTarget renders d, leaving out the instances that fail to render on their own, so one bad
+// instance does not hold back every other change to the file. It returns how many it left out.
+//
+// Rendering an instance alone stands in for its part of the whole render, which holds only while
+// the template does not read across .Instances. Where it does, the wrong instance can be left out,
+// but the kept ones must still render together, so a broken file is never returned.
+func renderTarget(logger *slog.Logger, target Target, d Data, funcs template.FuncMap) ([]byte, int, error) {
+	content, err := render(target, d, funcs)
+	if err == nil {
+		return content, 0, nil
+	}
+
+	kept := []Instance{}
+
+	for _, inst := range d.Instances {
+		_, instErr := render(target, Data{Label: d.Label, Flags: d.Flags, Instances: []Instance{inst}}, funcs)
+		if instErr != nil {
+			logger.Error("rendering; leaving the instance out", "target", target.String(), "instance", inst.Project+"/"+inst.Name, "err", instErr)
+
+			continue
+		}
+
+		kept = append(kept, inst)
+	}
+
+	// Every instance failing alone points at the target rather than at them, and rendering
+	// none of them would empty the live file.
+	if len(kept) == 0 || len(kept) == len(d.Instances) {
+		return nil, 0, err
+	}
+
+	leftOut := len(d.Instances) - len(kept)
+	d.Instances = kept
+
+	content, err = render(target, d, funcs)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return content, leftOut, nil
+}
+
 func reconcileDeployments(
 	ctx context.Context,
 	state *deployState,
@@ -69,11 +111,23 @@ func reconcileDeployments(
 	targets []Target,
 	funcs template.FuncMap,
 	instances []*iutil.Event,
+	metrics bool,
 ) {
 	for _, target := range targets {
 		targetKey := target.Key()
 
-		content, err := render(target, data(target, instances), funcs)
+		content, leftOut, err := renderTarget(logger, target, data(target, instances), funcs)
+
+		if metrics {
+			failed := 0.0
+			if err != nil {
+				failed = 1
+			}
+
+			renderFailedGauge.WithLabelValues(targetKey).Set(failed)
+			renderLeftOutGauge.WithLabelValues(targetKey).Set(float64(leftOut))
+		}
+
 		if err != nil {
 			logger.Error("rendering", "target", target.String(), "err", err)
 
