@@ -5,7 +5,7 @@ import (
 
 	"github.com/urfave/cli/v3"
 
-	"github.com/jochumdev/incus-templated/templated"
+	"github.com/lxc/incus-templated/templated"
 )
 
 type TargetFlag = cli.FlagBase[[]templated.Target, cli.NoConfig, targetValue]

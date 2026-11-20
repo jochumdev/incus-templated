@@ -11,7 +11,7 @@ import (
 
 	"github.com/lxc/incus-compose/incustrust"
 
-	"github.com/jochumdev/incus-templated/templated"
+	"github.com/lxc/incus-templated/templated"
 )
 
 func TestVersionCommand(t *testing.T) {

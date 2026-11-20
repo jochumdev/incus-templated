@@ -13,7 +13,7 @@ leafwiki_last_author_id: system
 
 # Developer
 
-- [CONTRIBUTING.md](https://github.com/jochumdev/incus-caddy-config/blob/main/CONTRIBUTING.md) -
+- [CONTRIBUTING.md](https://github.com/lxc/incus-caddy-config/blob/main/CONTRIBUTING.md) -
   coding, commit and changelog rules, and the project layout.
 - [Architecture & Security](/architecture) - the process model, the SFTP
   deployer, single-goroutine confinement and warm gating.

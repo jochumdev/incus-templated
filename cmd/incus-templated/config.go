@@ -11,8 +11,8 @@ import (
 
 	"go.yaml.in/yaml/v3"
 
-	"github.com/jochumdev/incus-templated/caddy"
-	"github.com/jochumdev/incus-templated/templated"
+	"github.com/lxc/incus-templated/caddy"
+	"github.com/lxc/incus-templated/templated"
 )
 
 const (

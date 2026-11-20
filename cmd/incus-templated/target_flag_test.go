@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/urfave/cli/v3"
 
-	"github.com/jochumdev/incus-templated/templated"
+	"github.com/lxc/incus-templated/templated"
 )
 
 func targetCommand(targets *[]templated.Target, got *[]templated.Target) *cli.Command {

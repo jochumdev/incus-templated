@@ -8,7 +8,7 @@ import (
 	incusapi "github.com/lxc/incus/v7/shared/api"
 	"github.com/stretchr/testify/require"
 
-	"github.com/jochumdev/incus-templated/templated"
+	"github.com/lxc/incus-templated/templated"
 )
 
 func TestChainAssemble(t *testing.T) {

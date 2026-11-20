@@ -55,7 +55,7 @@ dockers_v2:
       VERSION: "{{ .Version }}"
     images:
       # The repository owner, so a fork publishes under its own account; ghcr needs it lowercase.
-      - '{{ printf "ghcr.io/%s/incus-templated/incus-templated" (tolower (envOrDefault "GITHUB_REPOSITORY_OWNER" "jochumdev")) }}'
+      - '{{ printf "ghcr.io/%s/incus-templated/incus-templated" (tolower (envOrDefault "GITHUB_REPOSITORY_OWNER" "lxc")) }}'
     tags:
       - "{{ .Version }}"
       - "latest"

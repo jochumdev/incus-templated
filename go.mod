@@ -1,4 +1,4 @@
-module github.com/jochumdev/incus-templated
+module github.com/lxc/incus-templated
 
 go 1.27.4
 

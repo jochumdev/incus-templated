@@ -16,8 +16,8 @@ import (
 	"github.com/lxc/incus-compose/ievent/log"
 	"github.com/lxc/incus-compose/shared"
 
-	"github.com/jochumdev/incus-templated/caddy"
-	"github.com/jochumdev/incus-templated/templated"
+	"github.com/lxc/incus-templated/caddy"
+	"github.com/lxc/incus-templated/templated"
 )
 
 type position struct {

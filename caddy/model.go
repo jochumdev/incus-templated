@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/jochumdev/incus-templated/templated"
+	"github.com/lxc/incus-templated/templated"
 )
 
 // vhost holds the model data needed to render a Caddyfile site block.

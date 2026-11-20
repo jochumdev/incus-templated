@@ -36,7 +36,7 @@ variable and default path changed; there is no compatibility layer.
 ### Changed
 
 - The binary, command and image are `incus-templated`
-  (`ghcr.io/jochumdev/incus-templated/incus-templated`). (by @tallica)
+  (`ghcr.io/lxc/incus-templated/incus-templated`). (by @tallica)
 - `--caddy-instance` and `--os-path` are replaced by
   `--target <label>,preset=caddy,instance=<inst>,project=<proj>` and
   `--target <label>,preset=caddy,path=<path>`. A local target no longer

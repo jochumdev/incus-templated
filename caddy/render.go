@@ -11,7 +11,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/jochumdev/incus-templated/templated"
+	"github.com/lxc/incus-templated/templated"
 )
 
 //go:embed caddy.tmpl

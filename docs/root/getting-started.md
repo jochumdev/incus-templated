@@ -67,7 +67,7 @@ services:
       retries: 12
 
   incus-templated:
-    image: ghcr.io/jochumdev/incus-templated/incus-templated:1.0.0-beta.2
+    image: ghcr.io/lxc/incus-templated/incus-templated:1.0.0-beta.2
     restart: unless-stopped
     depends_on:
       caddy:

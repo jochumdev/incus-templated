@@ -19,10 +19,10 @@ log; do not call `go test` directly.
 
 ## Tiers
 
-| Tier | Command | Needs |
-|---|---|---|
-| Local | `just test-local [./pkg/...] [-run Name]` | Nothing outside the checkout |
-| End to end | `just test-e2e [./pkg/...] [-run Name]` | A reachable Incus remote and `incus-compose` on `PATH` |
+| Tier       | Command                                   | Needs                                                  |
+| ---------- | ----------------------------------------- | ------------------------------------------------------ |
+| Local      | `just test-local [./pkg/...] [-run Name]` | Nothing outside the checkout                           |
+| End to end | `just test-e2e [./pkg/...] [-run Name]`   | A reachable Incus remote and `incus-compose` on `PATH` |
 
 `just test-local` sets `TEST_LOCAL=1` and `just test-e2e` sets `TEST_E2E=1`. An
 end-to-end test calls `skipE2E(t)` first, which skips it unless `TEST_E2E` is
@@ -59,7 +59,7 @@ no `sleep`, and the test does not wait for one.
 Anything that needs Incus state gets it from a real Incus, in the end-to-end
 tier. A fake `incus.InstanceServer` encodes a guess about what the daemon
 returns, and a test that passes against the guess proves nothing. See
-[CONTRIBUTING.md](https://github.com/jochumdev/incus-caddy-config/blob/main/CONTRIBUTING.md#testing).
+[CONTRIBUTING.md](https://github.com/lxc/incus-caddy-config/blob/main/CONTRIBUTING.md#testing).
 
 Local commands are the one seam: `templated.execCommand` is a package variable
 that the `deploy_os` tests replace to check which commands run, and in what

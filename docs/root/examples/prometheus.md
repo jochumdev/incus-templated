@@ -65,7 +65,7 @@ services:
       prom.port: "9100"
 
   incus-templated:
-    image: ghcr.io/jochumdev/incus-templated/incus-templated:1.0.0-beta.2
+    image: ghcr.io/lxc/incus-templated/incus-templated:1.0.0-beta.2
     container_name: incus-templated
     restart: unless-stopped
     environment:

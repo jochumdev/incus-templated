@@ -122,7 +122,7 @@ services:
       retries: 12
 
   incus-templated:
-    image: ghcr.io/jochumdev/incus-templated/incus-templated:1.0.0-beta.2
+    image: ghcr.io/lxc/incus-templated/incus-templated:1.0.0-beta.2
     restart: unless-stopped
     depends_on:
       caddy:
@@ -186,11 +186,11 @@ curl -H "Host: web.example.test" http://127.0.0.1/
 
 For a Caddy target bound to prefix `edge` (`--target edge,preset=caddy,instance=caddy,project=default` or `--target edge,preset=caddy,path=/etc/caddy/Caddyfile`):
 
-| Label in `compose.yaml` | Description                                                                                                                           |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Label in `compose.yaml` | Description                                                                                                                                                                                   |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `edge`                  | **(Required)** Domain name(s) with optional flags (e.g. `,upstream=8080`, `,network=incusbr0`, `,redir=https://new.com`, `,template=custom.caddyfile`). Multiple domains separated by spaces. |
-| `edge.redirs`           | Alternate redirection domain(s) mapping to primary domain (e.g. `www.example.com,no-uri`).                                            |
-| `edge.service`          | Custom service name override (defaults to `user.incus-compose.service`).                                                              |
+| `edge.redirs`           | Alternate redirection domain(s) mapping to primary domain (e.g. `www.example.com,no-uri`).                                                                                                    |
+| `edge.service`          | Custom service name override (defaults to `user.incus-compose.service`).                                                                                                                      |
 
 ---
 
